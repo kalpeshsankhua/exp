@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Expense Tracker — Kalpesh</title>
+<style>
+  /* ── RESET & BASE ─────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:    #0d1b4b;
+    --navy2:   #1a2f7a;
+    --blue:    #2451c8;
+    --accent:  #4f8ef7;
+    --gold:    #f0a500;
+    --success: #2dba6f;
+    --danger:  #e0334c;
+    --bg:      #f4f6fb;
+    --card:    #ffffff;
+    --border:  #dde3f0;
+    --text:    #1c2340;
+    --muted:   #7a85a3;
+    --radius:  14px;
+    --shadow:  0 4px 24px rgba(36,81,200,.10);
+    --font:    'Segoe UI', system-ui, sans-serif;
+  }
+
+  html, body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  /* ── HEADER ───────────────────────────────────────────── */
+  header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 60%, var(--blue) 100%);
+    color: #fff;
+    padding: 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 16px rgba(13,27,75,.30);
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    gap: 10px;
+  }
+  .header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header-logo {
+    width: 38px; height: 38px;
+    background: var(--gold);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 2px 8px rgba(240,165,0,.40);
+    flex-shrink: 0;
+  }
+  .header-title { font-size: 17px; font-weight: 700; letter-spacing: .3px; }
+  .header-sub   { font-size: 11px; opacity: .65; letter-spacing: .5px; text-transform: uppercase; }
+
+  .sync-pill {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.20);
+    border-radius: 20px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 12px; font-weight: 600;
+    color: #fff;
+    transition: background .2s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .sync-pill:hover { background: rgba(255,255,255,.22); }
+  .sync-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--success);
+    animation: pulse 2s infinite;
+  }
+  .sync-dot.error { background: var(--danger); animation: none; }
+  .sync-dot.syncing { background: var(--gold); }
+  @keyframes pulse {
+    0%,100% { opacity: 1; } 50% { opacity: .4; }
+  }
+
+  /* ── TABS ─────────────────────────────────────────────── */
+  .tabs {
+    display: flex;
+    background: rgba(255,255,255,.08);
+    border-top: 1px solid rgba(255,255,255,.10);
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px 6px;
+    border: none;
+    background: transparent;
+    color: rgba(255,255,255,.55);
+    font-size: 12px; font-weight: 600;
+    cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    transition: color .2s, background .2s;
+    letter-spacing: .4px;
+  }
+  .tab-btn .ti { font-size: 18px; }
+  .tab-btn.active {
+    color: #fff;
+    background: rgba(255,255,255,.13);
+    border-bottom: 2px solid var(--gold);
+  }
+
+  /* ── MAIN CONTENT ─────────────────────────────────────── */
+  main { padding: 18px 14px 80px; max-width: 520px; margin: 0 auto; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* ── CARDS ────────────────────────────────────────────── */
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-size: 14px; font-weight: 700; color: var(--navy);
+    margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+  }
+  .card-title::before {
+    content: '';
+    display: block; width: 3px; height: 16px;
+    background: var(--blue); border-radius: 2px;
+  }
+
+  /* ── FORM FIELDS ──────────────────────────────────────── */
+  .field { margin-bottom: 14px; }
+  label {
+    display: block;
+    font-size: 12px; font-weight: 600; color: var(--muted);
+    margin-bottom: 6px; letter-spacing: .5px; text-transform: uppercase;
+  }
+  input, select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px; font-family: var(--font);
+    color: var(--text);
+    background: #f9fafd;
+    outline: none;
+    transition: border-color .2s, box-shadow .2s;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  input:focus, select:focus {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(36,81,200,.12);
+    background: #fff;
+  }
+  .select-wrap { position: relative; }
+  .select-wrap::after {
+    content: '▾';
+    position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); pointer-events: none; font-size: 13px;
+  }
+  input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  .amount-wrap { position: relative; }
+  .amount-prefix {
+    position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+    color: var(--muted); font-weight: 600; font-size: 14px; pointer-events: none;
+  }
+  .amount-wrap input { padding-left: 28px; }
+
+  /* ── BUTTONS ──────────────────────────────────────────── */
+  .btn {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    width: 100%; padding: 13px;
+    border: none; border-radius: 10px;
+    font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: transform .12s, box-shadow .18s, opacity .18s;
+    letter-spacing: .4px;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--navy2), var(--blue));
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(36,81,200,.30);
+  }
+  .btn-primary:hover { box-shadow: 0 6px 20px rgba(36,81,200,.40); }
+  .btn-gold {
+    background: linear-gradient(135deg, #c97f00, var(--gold));
+    color: #fff;
+    box-shadow: 0 4px 14px rgba(240,165,0,.30);
+  }
+  .btn-ghost {
+    background: #f0f4ff; color: var(--navy2);
+    border: 1.5px solid var(--border);
+    box-shadow: none;
+  }
+  .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+  /* ── TOAST ────────────────────────────────────────────── */
+  #toast-wrap {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    z-index: 999; display: flex; flex-direction: column; gap: 8px;
+    align-items: center; width: 90%; max-width: 360px;
+    pointer-events: none;
+  }
+  .toast {
+    padding: 12px 18px; border-radius: 10px;
+    font-size: 13px; font-weight: 600;
+    box-shadow: 0 4px 18px rgba(0,0,0,.18);
+    animation: slideUp .3s ease, fadeOut .4s ease 2.6s forwards;
+    text-align: center; width: 100%;
+  }
+  .toast.success { background: var(--success); color: #fff; }
+  .toast.error   { background: var(--danger);  color: #fff; }
+  .toast.info    { background: var(--navy2);   color: #fff; }
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
+  }
+  @keyframes fadeOut {
+    to { opacity: 0; transform: translateY(-8px); }
+  }
+
+  /* ── STATUS BAR ───────────────────────────────────────── */
+  .status-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: #eef1fb; border-radius: 10px;
+    padding: 10px 14px; margin-bottom: 16px;
+    font-size: 12px; color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .status-bar strong { color: var(--navy); }
+
+  /* ── HISTORY LIST ─────────────────────────────────────── */
+  .expense-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .expense-item:last-child { border-bottom: none; }
+  .exp-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .exp-icon.travel  { background: #e8eeff; }
+  .exp-icon.snacks  { background: #fff4e0; }
+  .exp-icon.other   { background: #e8f5ec; }
+  .exp-info { flex: 1; min-width: 0; }
+  .exp-client { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .exp-meta   { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .exp-amount { font-size: 15px; font-weight: 700; color: var(--navy2); white-space: nowrap; }
+
+  .empty-state {
+    text-align: center; padding: 30px 0;
+    color: var(--muted); font-size: 13px;
+  }
+  .empty-state .big { font-size: 38px; margin-bottom: 8px; }
+
+  /* ── PDF / REPORT ─────────────────────────────────────── */
+  .row2 { display: flex; gap: 10px; }
+  .row2 > * { flex: 1; }
+
+  .summary-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 10px; margin-bottom: 16px;
+  }
+  .summary-tile {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--navy2) 100%);
+    border-radius: 12px; padding: 14px 16px; color: #fff;
+    text-align: center;
+  }
+  .summary-tile.gold { background: linear-gradient(135deg, #c97f00, var(--gold)); }
+  .summary-tile .val { font-size: 22px; font-weight: 800; }
+  .summary-tile .lbl { font-size: 10px; opacity: .75; margin-top: 2px; text-transform: uppercase; letter-spacing: .5px; }
+
+  /* ── PRINT STYLES ─────────────────────────────────────── */
+  @media print {
+    body * { visibility: hidden !important; }
+    #print-area, #print-area * { visibility: visible !important; }
+    #print-area {
+      position: fixed; left: 0; top: 0; width: 100%;
+      background: #fff !important; color: #000 !important;
+    }
+  }
+  #print-area { display: none; }
+
+  /* ── RESPONSIVE ───────────────────────────────────────── */
+  @media (min-width: 480px) {
+    main { padding: 24px 20px 80px; }
+    .header-inner { padding: 16px 24px; }
+  }
+
+  /* ── LOADER ───────────────────────────────────────────── */
+  .spinner {
+    display: inline-block; width: 16px; height: 16px;
+    border: 2px solid rgba(255,255,255,.4);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── DIVIDER ──────────────────────────────────────────── */
+  .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+  /* ── OFFLINE BANNER ───────────────────────────────────── */
+  #offline-banner {
+    display: none;
+    background: var(--danger); color: #fff;
+    text-align: center; font-size: 12px; font-weight: 600;
+    padding: 6px 14px; letter-spacing: .3px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ── OFFLINE BANNER ─────────────────────────────────────── -->
+<div id="offline-banner">⚠ No internet connection — some features may be limited.</div>
+
+<!-- ── HEADER ─────────────────────────────────────────────── -->
+<header>
+  <div class="header-inner">
+    <div class="header-brand">
+      <div class="header-logo">💼</div>
+      <div>
+        <div class="header-title">Expense Tracker</div>
+        <div class="header-sub">Kalpesh</div>
+      </div>
+    </div>
+    <button class="sync-pill" onclick="manualSync()" id="sync-btn">
+      <div class="sync-dot" id="sync-dot"></div>
+      <span id="sync-label">Sync</span>
+    </button>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('entry',this)">
+      <span class="ti">➕</span>ADD
+    </button>
+    <button class="tab-btn" onclick="switchTab('history',this)">
+      <span class="ti">📋</span>HISTORY
+    </button>
+    <button class="tab-btn" onclick="switchTab('report',this)">
+      <span class="ti">📄</span>REPORT
+    </button>
+    <button class="tab-btn" onclick="switchTab('settings',this)">
+      <span class="ti">⚙️</span>SETUP
+    </button>
+  </div>
+</header>
+
+<main>
+
+  <!-- ══════════════════════════════════════════════════════
+       TAB 1 — EXPENSE ENTRY
+  ══════════════════════════════════════════════════════════ -->
+  <section class="section active" id="sec-entry">
+
+    <div class="card">
+      <div class="card-title">New Expense</div>
+
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="exp-date"/>
+      </div>
+
+      <div class="field">
+        <label>Client Name</label>
+        <div class="select-wrap">
+          <select id="exp-client">
+            <option value="">— Select Client —</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Type of Expense</label>
+        <div class="select-wrap">
+          <select id="exp-type">
+            <option value="">— Select Type —</option>
+            <option value="Travelling">Travelling</option>
+            <option value="Snacks for late sitting on GST Due Date">Snacks for late sitting on GST Due Date</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Amount (₹)</label>
+        <div class="amount-wrap">
+          <span class="amount-prefix">₹</span>
+          <input type="number" id="exp-amount" placeholder="0.00" min="0" step="0.01"/>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="save-btn" onclick="saveExpense()">
+        💾 Save Expense
+      </button>
+    </div>
+
+    <div class="status-bar">
+      <span>Last synced: <strong id="last-sync-time">Never</strong></span>
+      <span id="total-today-label">Today: <strong>₹0</strong></span>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       TAB 2 — HISTORY
+  ══════════════════════════════════════════════════════════ -->
+  <section class="section" id="sec-history">
+    <div class="card">
+      <div class="card-title">Recent Expenses</div>
+      <div id="history-list">
+        <div class="empty-state">
+          <div class="big">📭</div>
+          Sync to load expenses
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       TAB 3 — REPORT / PDF
+  ══════════════════════════════════════════════════════════ -->
+  <section class="section" id="sec-report">
+
+    <div class="card">
+      <div class="card-title">Monthly Report</div>
+      <div class="row2">
+        <div class="field" style="margin-bottom:0">
+          <label>Month</label>
+          <div class="select-wrap">
+            <select id="rep-month"></select>
+          </div>
+        </div>
+        <div class="field" style="margin-bottom:0">
+          <label>Year</label>
+          <div class="select-wrap">
+            <select id="rep-year"></select>
+          </div>
+        </div>
+      </div>
+      <br/>
+      <button class="btn btn-ghost" onclick="loadReport()" id="fetch-report-btn">
+        🔍 Fetch Report
+      </button>
+    </div>
+
+    <div id="report-output" style="display:none">
+      <div class="summary-grid">
+        <div class="summary-tile">
+          <div class="val" id="rep-count">0</div>
+          <div class="lbl">Total Entries</div>
+        </div>
+        <div class="summary-tile gold">
+          <div class="val" id="rep-total">₹0</div>
+          <div class="lbl">Total Amount</div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div style="overflow-x:auto;">
+          <table id="rep-table" style="width:100%; border-collapse:collapse; font-size:13px;">
+            <thead>
+              <tr style="background:var(--navy); color:#fff;">
+                <th style="padding:10px 12px; text-align:left;">Date</th>
+                <th style="padding:10px 12px; text-align:left;">Client</th>
+                <th style="padding:10px 12px; text-align:left;">Type</th>
+                <th style="padding:10px 12px; text-align:right;">₹ Amount</th>
+              </tr>
+            </thead>
+            <tbody id="rep-tbody"></tbody>
+            <tfoot>
+              <tr style="background:#f4f6fb; font-weight:700; border-top:2px solid var(--border);">
+                <td colspan="3" style="padding:10px 12px; color:var(--navy);">TOTAL</td>
+                <td style="padding:10px 12px; text-align:right; color:var(--blue);" id="rep-foot-total">₹0</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <button class="btn btn-gold" onclick="downloadPDF()" style="margin-top:4px;">
+        ⬇ Download PDF Report
+      </button>
+    </div>
+
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       TAB 4 — SETTINGS
+  ══════════════════════════════════════════════════════════ -->
+  <section class="section" id="sec-settings">
+    <div class="card">
+      <div class="card-title">Configuration</div>
+
+      <div class="field">
+        <label>Google Apps Script URL</label>
+        <input type="url" id="cfg-url" placeholder="https://script.google.com/macros/s/.../exec"/>
+      </div>
+      <button class="btn btn-primary" onclick="saveConfig()">💾 Save Configuration</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Sync Status</div>
+      <div style="font-size:13px; color:var(--muted); line-height:1.8;">
+        <div>🔄 Auto-sync every <strong>5 minutes</strong></div>
+        <div>📡 Script URL: <strong id="cfg-url-display" style="word-break:break-all; color:var(--navy);">Not set</strong></div>
+        <div>👥 Clients loaded: <strong id="cfg-client-count">0</strong></div>
+      </div>
+      <div class="divider"></div>
+      <button class="btn btn-ghost" onclick="manualSync()">🔄 Sync Now</button>
+    </div>
+
+    <div class="card">
+      <div class="card-title">About</div>
+      <div style="font-size:13px; color:var(--muted); line-height:1.8;">
+        <div>📦 Version: <strong>1.0.0</strong></div>
+        <div>👤 Owner: <strong>Kalpesh</strong></div>
+        <div>🛠 Built with Pure HTML + Vanilla JS</div>
+        <div>📊 Backend: Google Apps Script + Sheets</div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── TOAST CONTAINER ────────────────────────────────────── -->
+<div id="toast-wrap"></div>
+
+<!-- ── PRINT AREA ─────────────────────────────────────────── -->
+<div id="print-area"></div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════╗
+// ║              EXPENSE TRACKER — KALPESH                   ║
+// ║              Pure Vanilla JavaScript                     ║
+// ╚══════════════════════════════════════════════════════════╝
+
+// ── CONFIG ────────────────────────────────────────────────
+// ⚠ HARDCODE YOUR SCRIPT URL HERE after deployment:
+const DEFAULT_SCRIPT_URL = ""; // e.g. "https://script.google.com/macros/s/ABC.../exec"
+
+// ── STATE ─────────────────────────────────────────────────
+let clients    = [];
+let reportData = [];
+let scriptUrl  = "";
+let syncTimer  = null;
+
+// ── INIT ──────────────────────────────────────────────────
+window.addEventListener("DOMContentLoaded", () => {
+  loadConfig();
+  setDefaultDate();
+  populateMonthYear();
+  startAutoSync();
+  checkOffline();
+  window.addEventListener("online",  () => { document.getElementById("offline-banner").style.display = "none"; });
+  window.addEventListener("offline", () => { document.getElementById("offline-banner").style.display = "block"; });
+});
+
+function checkOffline() {
+  if (!navigator.onLine) document.getElementById("offline-banner").style.display = "block";
+}
+
+// ── CONFIG LOAD/SAVE ───────────────────────────────────────
+function loadConfig() {
+  scriptUrl = localStorage.getItem("scriptUrl") || DEFAULT_SCRIPT_URL;
+  document.getElementById("cfg-url").value = scriptUrl;
+  document.getElementById("cfg-url-display").textContent = scriptUrl || "Not set";
+  if (scriptUrl) syncAll();
+}
+
+function saveConfig() {
+  const url = document.getElementById("cfg-url").value.trim();
+  if (!url) { toast("Please enter a valid Script URL.", "error"); return; }
+  scriptUrl = url;
+  localStorage.setItem("scriptUrl", url);
+  document.getElementById("cfg-url-display").textContent = url;
+  toast("Configuration saved! Syncing…", "success");
+  syncAll();
+}
+
+// ── TAB SWITCHING ──────────────────────────────────────────
+function switchTab(id, btn) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById("sec-" + id).classList.add("active");
+  btn.classList.add("active");
+}
+
+// ── DATE UTILS ────────────────────────────────────────────
+function setDefaultDate() {
+  const today = new Date();
+  document.getElementById("exp-date").value = toInputDate(today);
+}
+
+function toInputDate(d) {
+  const y  = d.getFullYear();
+  const m  = String(d.getMonth() + 1).padStart(2, "0");
+  const dy = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dy}`;
+}
+
+function formatDisplay(dateStr) {
+  if (!dateStr) return "";
+  const [y, m, d] = dateStr.split("-");
+  return `${d}/${m}/${y}`;
+}
+
+function populateMonthYear() {
+  const months = ["January","February","March","April","May","June",
+                  "July","August","September","October","November","December"];
+  const mSel = document.getElementById("rep-month");
+  const ySel = document.getElementById("rep-year");
+  months.forEach((mn, i) => {
+    const o = document.createElement("option");
+    o.value = i + 1; o.textContent = mn;
+    mSel.appendChild(o);
+  });
+  const now = new Date();
+  mSel.value = now.getMonth() + 1;
+
+  for (let y = now.getFullYear(); y >= now.getFullYear() - 5; y--) {
+    const o = document.createElement("option");
+    o.value = y; o.textContent = y;
+    ySel.appendChild(o);
+  }
+}
+
+// ── AUTO SYNC ─────────────────────────────────────────────
+function startAutoSync() {
+  if (syncTimer) clearInterval(syncTimer);
+  syncTimer = setInterval(() => { if (scriptUrl) syncAll(); }, 5 * 60 * 1000);
+}
+
+function manualSync() {
+  if (!scriptUrl) {
+    toast("⚙ Please configure your Script URL in the Setup tab.", "info");
+    return;
+  }
+  syncAll();
+}
+
+async function syncAll() {
+  setSyncStatus("syncing", "Syncing…");
+  try {
+    await fetchClients();
+    updateLastSync();
+    setSyncStatus("ok", "Synced");
+  } catch (e) {
+    setSyncStatus("error", "Error");
+    toast("Sync failed: " + e.message, "error");
+  }
+}
+
+function setSyncStatus(state, label) {
+  const dot = document.getElementById("sync-dot");
+  const lbl = document.getElementById("sync-label");
+  dot.className = "sync-dot" + (state === "syncing" ? " syncing" : state === "error" ? " error" : "");
+  lbl.textContent = label;
+}
+
+function updateLastSync() {
+  const t = new Date();
+  document.getElementById("last-sync-time").textContent =
+    t.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+}
+
+// ── API: FETCH CLIENTS ─────────────────────────────────────
+async function fetchClients() {
+  if (!scriptUrl) return;
+  const res  = await apiFetch(scriptUrl + "?action=getClients");
+  if (res.status !== "success") throw new Error(res.message || "Failed to fetch clients.");
+  clients = res.clients || [];
+  populateClientDropdown();
+  document.getElementById("cfg-client-count").textContent = clients.length;
+}
+
+function populateClientDropdown() {
+  const sel = document.getElementById("exp-client");
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Select Client —</option>';
+  clients.forEach(c => {
+    const o = document.createElement("option");
+    o.value = c; o.textContent = c;
+    sel.appendChild(o);
+  });
+  if (cur) sel.value = cur;
+}
+
+// ── API: SAVE EXPENSE ──────────────────────────────────────
+async function saveExpense() {
+  if (!scriptUrl) { toast("⚙ Configure Script URL first.", "info"); return; }
+
+  const date        = document.getElementById("exp-date").value;
+  const clientName  = document.getElementById("exp-client").value;
+  const expenseType = document.getElementById("exp-type").value;
+  const amount      = document.getElementById("exp-amount").value;
+
+  if (!date)        { toast("Please select a date.", "error"); return; }
+  if (!clientName)  { toast("Please select a client.", "error"); return; }
+  if (!expenseType) { toast("Please select expense type.", "error"); return; }
+  if (!amount || isNaN(amount) || Number(amount) <= 0)
+    { toast("Enter a valid amount.", "error"); return; }
+
+  const btn = document.getElementById("save-btn");
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Saving…';
+
+  try {
+    const res = await apiPost({ action: "saveExpense", date, clientName, expenseType, amount });
+    if (res.status !== "success") throw new Error(res.message || "Save failed.");
+
+    // Add to local history
+    addToLocalHistory({ date, clientName, expenseType, amount: Number(amount) });
+    updateTodayTotal();
+
+    toast("✅ Expense saved!", "success");
+    document.getElementById("exp-amount").value = "";
+    setDefaultDate();
+  } catch (e) {
+    toast("❌ " + e.message, "error");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = "💾 Save Expense";
+  }
+}
+
+// ── LOCAL HISTORY ──────────────────────────────────────────
+let localHistory = JSON.parse(localStorage.getItem("localHistory") || "[]");
+
+function addToLocalHistory(entry) {
+  localHistory.unshift(entry);
+  if (localHistory.length > 200) localHistory = localHistory.slice(0, 200);
+  localStorage.setItem("localHistory", JSON.stringify(localHistory));
+  renderHistory();
+}
+
+function renderHistory() {
+  const el = document.getElementById("history-list");
+  if (!localHistory.length) {
+    el.innerHTML = '<div class="empty-state"><div class="big">📭</div>No expenses yet</div>';
+    return;
+  }
+  el.innerHTML = localHistory.slice(0, 50).map(e => {
+    const icon = e.expenseType && e.expenseType.includes("Travel") ? "🚗"
+               : e.expenseType && e.expenseType.includes("Snack")  ? "🍱" : "💼";
+    const cls  = e.expenseType && e.expenseType.includes("Travel") ? "travel"
+               : e.expenseType && e.expenseType.includes("Snack")  ? "snacks" : "other";
+    return `<div class="expense-item">
+      <div class="exp-icon ${cls}">${icon}</div>
+      <div class="exp-info">
+        <div class="exp-client">${esc(e.clientName)}</div>
+        <div class="exp-meta">${formatDisplay(e.date)} · ${esc(e.expenseType)}</div>
+      </div>
+      <div class="exp-amount">₹${fmt(e.amount)}</div>
+    </div>`;
+  }).join("");
+}
+
+function updateTodayTotal() {
+  const today = toInputDate(new Date());
+  const sum = localHistory
+    .filter(e => e.date === today)
+    .reduce((s, e) => s + Number(e.amount), 0);
+  document.getElementById("total-today-label").innerHTML =
+    `Today: <strong>₹${fmt(sum)}</strong>`;
+}
+
+// Restore history on load
+(function() {
+  renderHistory();
+  updateTodayTotal();
+})();
+
+// ── API: FETCH MONTHLY REPORT ──────────────────────────────
+async function loadReport() {
+  if (!scriptUrl) { toast("⚙ Configure Script URL first.", "info"); return; }
+
+  const month = document.getElementById("rep-month").value;
+  const year  = document.getElementById("rep-year").value;
+  const btn   = document.getElementById("fetch-report-btn");
+  btn.disabled = true; btn.textContent = "Loading…";
+
+  try {
+    const res = await apiFetch(`${scriptUrl}?action=getMonthlyData&month=${month}&year=${year}`);
+    if (res.status !== "success") throw new Error(res.message);
+
+    reportData = res.data || [];
+    renderReport(res.total || 0);
+    document.getElementById("report-output").style.display = "block";
+  } catch (e) {
+    toast("❌ " + e.message, "error");
+  } finally {
+    btn.disabled = false; btn.textContent = "🔍 Fetch Report";
+  }
+}
+
+function renderReport(total) {
+  document.getElementById("rep-count").textContent = reportData.length;
+  document.getElementById("rep-total").textContent = "₹" + fmt(total);
+  document.getElementById("rep-foot-total").textContent = "₹" + fmt(total);
+
+  const tbody = document.getElementById("rep-tbody");
+  if (!reportData.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--muted);">No data for selected period</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = reportData.map((r, i) => `
+    <tr style="background:${i % 2 ? "#f9fafd" : "#fff"}">
+      <td style="padding:9px 12px; white-space:nowrap;">${esc(r.date)}</td>
+      <td style="padding:9px 12px;">${esc(r.clientName)}</td>
+      <td style="padding:9px 12px; font-size:12px; color:var(--muted);">${esc(r.expenseType)}</td>
+      <td style="padding:9px 12px; text-align:right; font-weight:600;">₹${fmt(r.amount)}</td>
+    </tr>`).join("");
+}
+
+// ── PDF GENERATION (Pure JS — Print Strategy) ─────────────
+function downloadPDF() {
+  if (!reportData.length) { toast("No report data to export.", "info"); return; }
+
+  const month = document.getElementById("rep-month").options[document.getElementById("rep-month").selectedIndex].text;
+  const year  = document.getElementById("rep-year").value;
+  const total = reportData.reduce((s, r) => s + r.amount, 0);
+
+  const rows = reportData.map((r, i) => `
+    <tr style="background:${i % 2 ? "#f5f7ff" : "#fff"}">
+      <td>${esc(r.date)}</td>
+      <td>${esc(r.clientName)}</td>
+      <td>${esc(r.expenseType)}</td>
+      <td style="text-align:right; font-weight:600;">₹${fmt(r.amount)}</td>
+    </tr>`).join("");
+
+  const html = `
+    <div style="font-family:'Segoe UI',sans-serif; padding:32px; max-width:750px; margin:auto;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+        <div>
+          <h1 style="font-size:22px; color:#0d1b4b; margin:0;">Expense Report</h1>
+          <p style="margin:4px 0 0; color:#7a85a3; font-size:13px;">Kalpesh — ${month} ${year}</p>
+        </div>
+        <div style="font-size:28px;">💼</div>
+      </div>
+      <hr style="border:none; border-top:2px solid #0d1b4b; margin:16px 0;"/>
+
+      <table style="width:100%; border-collapse:collapse; font-size:13px;">
+        <thead>
+          <tr style="background:#0d1b4b; color:#fff;">
+            <th style="padding:10px 14px; text-align:left;">Date</th>
+            <th style="padding:10px 14px; text-align:left;">Client Name</th>
+            <th style="padding:10px 14px; text-align:left;">Type of Expense</th>
+            <th style="padding:10px 14px; text-align:right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+        <tfoot>
+          <tr style="background:#e8eeff; font-weight:800; font-size:14px; border-top:2px solid #0d1b4b;">
+            <td colspan="3" style="padding:12px 14px; color:#0d1b4b;">TOTAL EXPENSE</td>
+            <td style="padding:12px 14px; text-align:right; color:#2451c8;">₹${fmt(total)}</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div style="margin-top:30px; display:flex; justify-content:space-between; font-size:11px; color:#7a85a3;">
+        <span>Generated on: ${new Date().toLocaleDateString("en-IN", { day:"2-digit", month:"long", year:"numeric" })}</span>
+        <span>Expense Tracker — Kalpesh</span>
+      </div>
+      <p style="font-size:10px; color:#b0b7cc; margin-top:8px; text-align:center;">
+        This is a system-generated report. No signature required.
+      </p>
+    </div>`;
+
+  const printArea = document.getElementById("print-area");
+  printArea.innerHTML = html;
+  printArea.style.display = "block";
+
+  // Small delay to ensure render
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => {
+      printArea.style.display = "none";
+      printArea.innerHTML = "";
+    }, 1000);
+  }, 100);
+}
+
+// ── NETWORK HELPERS ────────────────────────────────────────
+async function apiFetch(url) {
+  const res = await fetch(url, { redirect: "follow" });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  return res.json();
+}
+
+async function apiPost(payload) {
+  const res = await fetch(scriptUrl, {
+    method: "POST",
+    redirect: "follow",
+    headers: { "Content-Type": "text/plain" }, // CORS workaround for Apps Script
+    body: JSON.stringify(payload)
+  });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  return res.json();
+}
+
+// ── TOAST ──────────────────────────────────────────────────
+function toast(msg, type = "info") {
+  const wrap = document.getElementById("toast-wrap");
+  const el   = document.createElement("div");
+  el.className = "toast " + type;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+// ── UTILS ──────────────────────────────────────────────────
+function esc(str) {
+  return String(str || "")
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;");
+}
+function fmt(n) {
+  return Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+</script>
+</body>
+</html>
